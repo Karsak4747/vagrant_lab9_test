@@ -2,7 +2,10 @@
 Vagrant.configure("2") do |config|
     # Базовая конфигурация для всех машин
     config.vm.box = "alvistack/ubuntu-24.04"
-#    config.vm.box_version = "20250120.1.1"    
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"  # 4GB RAM
+      vb.cpus = 1         # 1 CPU
+    end    
     # Машина hacker
     config.vm.define "hacker" do |hacker|
       hacker.vm.hostname = "hacker"
