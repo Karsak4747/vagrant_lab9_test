@@ -1,0 +1,43 @@
+---
+# tasks file for ansible-role-install-php
+- name: PHP | Install prerequisites
+  ansible.builtin.apt:
+    name:
+      - software-properties-common
+      - curl
+    state: present
+
+- name: PHP | Add PHP PPA
+  ansible.builtin.apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+
+- name: PHP | Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: PHP | Install packages
+  ansible.builtin.apt:
+    name:
+     - php8.3 
+     - php8.3-fpm
+     - libapache2-mod-php8.3 
+     - php8.3-mysql
+    state: present
+
+
+- name: PHP | place index.php
+  ansible.builtin.template:
+    src: php.conf.j2
+    dest: "{{ php_dir }}/index.php"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - restart php
+    
+- name: PHP | Enable PHP 8.3 module in Apach
+  command: a2enmod php8.3
+  ignore_errors: yes
+  notify:
+    - restart apache2

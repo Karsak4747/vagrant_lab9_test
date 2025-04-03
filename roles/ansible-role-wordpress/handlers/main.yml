@@ -1,0 +1,11 @@
+---
+# handlers file for ansible-role-wordpress
+- name: restart apache2
+  service:
+    name: apache2
+    state: restarted
+
+- name: start apache2
+  service:
+    name: apache2
+    state: started

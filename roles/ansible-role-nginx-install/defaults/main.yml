@@ -1,0 +1,10 @@
+---
+# defaults file for ansible-role-nginx-install
+load_balancer: False
+nginx_available_configs:
+  - nginx-html.conf
+  - nginx-load-balancer.conf
+  - nginx-php.conf
+balanced_servers:
+  - "server 192.168.57.102;"
+  - "server 192.168.57.103;"

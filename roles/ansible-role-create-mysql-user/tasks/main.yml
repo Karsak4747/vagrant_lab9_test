@@ -1,0 +1,51 @@
+---
+# tasks file for ansible-role-create-mysql-user
+- name: MySQL | Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: MySQL | Install packages
+  ansible.builtin.apt:
+    name:
+     - python3
+     - mysql-server
+     - mysql-client
+     - python3-pip
+    state: present
+
+- name: MySQL | Install MySQL Python library
+  pip:
+    name:
+      - PyMySQL
+
+- name: MySQL | Set root user password
+  community.mysql.mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    column_case_sensitive: true
+    state: present
+  ignore_errors: yes
+
+- name: MySQL | Create MySQL user and grant all privileges
+  community.mysql.mysql_user:
+    name: "{{ mysql_user }}"
+    password: "{{ mysql_password }}"
+    priv: "*.*:ALL"
+    host: "{{ mysql_user_host }}"
+    append_privs: yes
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    column_case_sensitive: true
+    state: present 
+
+
+- name: MySQL | Comment out the line containing 'bind-address'
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address'  
+    line: '#bind-address=127.0.0.1'    
+    backrefs: yes
+    state: present
+  notify:
+    - restart mysql-server

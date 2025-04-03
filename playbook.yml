@@ -1,0 +1,33 @@
+- hosts: server
+  become: yes
+  roles:
+    - ansible-role-create-mysql-user
+    - ansible-role-install-php
+    - ansible-role-wordpress
+    - { role: ansible-role-nginx-install, vars: { load_balancer: True } }
+#    - ansible-role-apache2-install
+
+- hosts: www
+  become: yes
+  roles:
+#    - ansible-role-install-php
+    - ansible-role-install-php
+    - ansible-role-wordpress
+#    - { role: ansible-role-nginx-install, vars: { load_balancer: False } }
+    - ansible-role-apache2-install
+
+- hosts: www2
+  become: yes
+  roles:
+#    - ansible-role-create-mysql-user
+    - ansible-role-install-php
+    - ansible-role-wordpress
+#    - { role: ansible-role-nginx-install, vars: { load_balancer: False } }
+    - ansible-role-apache2-install
+
+
+- hosts: hacker
+  become: yes
+  roles:
+    - ansible-role-web-benchmark
+

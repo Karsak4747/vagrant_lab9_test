@@ -1,0 +1,18 @@
+<?php
+$host = '{{ php_db_ip_address }}'; // IP-адрес MySQL сервера
+$username = '{{ php_db_username }}';
+$password = '{{ php_db_password }}';
+$dbname = '{{ php_db_name }}'; // Имя вашей базы данных
+
+// Попробуем подключиться
+$link = mysqli_connect($host, $username, $password, $dbname);
+
+// Проверка подключения
+if (!$link) {
+    die('Ошибка подключения: ' . mysqli_connect_error());
+}
+
+echo 'Подключение успешно!';
+
+mysqli_close($link);
+?>

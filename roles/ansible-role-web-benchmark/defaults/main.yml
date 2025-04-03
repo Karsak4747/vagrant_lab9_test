@@ -1,0 +1,6 @@
+---
+# defaults file for ansible-role-web-benchmark
+url_for_test: http://192.168.56.101:80/
+min_parallel_requests: 20
+max_parallel_requests: 10000
+benchmark_log: /var/log/benchmark-balanced-apache2-php.log

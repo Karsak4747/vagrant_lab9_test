@@ -1,0 +1,18 @@
+<VirtualHost *:8080>
+    DocumentRoot "/var/www/html/BigBasket/Big_Basket_Clone/Big_Basket_Clone"
+    DirectoryIndex index.html index.htm index.nginx-debian.html lines.html
+
+    <Directory "/var/www/html/BigBasket/Big_Basket_Clone/Big_Basket_Clone">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Обработка статических файлов в /js/
+    <Directory "/var/www/html/BigBasket/Big_Basket_Clone/Big_Basket_Clone/js">
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>

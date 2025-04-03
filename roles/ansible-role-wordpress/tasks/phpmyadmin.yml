@@ -1,0 +1,68 @@
+# tasks file for install phpmyadmin
+- name: PhpMyAdmin | Update apt cache
+  apt: 
+    update_cache: yes  
+
+
+- name: PhpMyAdmin | Package Install
+  apt: 
+    name: 
+      - debconf-utils
+      - php8.3-mbstring
+      - apache2
+    state: present
+  notify:
+    - start apache2  
+
+- name: PhpMyAdmin | debconf for PhpMyAdmin
+  debconf: 
+    name: phpmyadmin 
+    question: 'phpmyadmin/reconfigure-webserver' 
+    value: '' 
+    vtype: 'multiselect'
+
+- name: PhpMyAdmin | debconf for PhpMyAdmin
+  debconf: 
+    name: phpmyadmin 
+    question: 'phpmyadmin/dbconfig-install' 
+    value: 'true' 
+    vtype: 'boolean'
+
+- name: PhpMyAdmin | debconf for PhpMyAdmin
+  debconf: 
+    name: phpmyadmin 
+    question: 'phpmyadmin/app-password-confirm' 
+    value: '{{ mysql_root_password }}' 
+    vtype: 'password'
+
+- name: PhpMyAdmin | debconf for PhpMyAdmin
+  debconf: 
+    name: phpmyadmin 
+    question: 'phpmyadmin/mysql/admin-pass' 
+    value: '{{ mysql_root_password }}' 
+    vtype: 'password'
+
+- name: PhpMyAdmin | debconf for PhpMyAdmin
+  debconf: 
+    name: phpmyadmin 
+    question: 'phpmyadmin/mysql/app-pass' 
+    value: '{{ mysql_root_password }}' 
+    vtype: 'password'
+
+- name: PhpMyAdmin | Install PhpMyAdmin
+  apt: 
+    name: 
+      - phpmyadmin 
+    state: present
+
+
+- name: PhpMyAdmin | Create symbolic link for phpMyAdmin in Apache
+  file:
+    src: /etc/phpmyadmin/apache.conf
+    dest: /etc/apache2/conf-enabled/phpmyadmin.conf
+    state: link
+  notify:
+    - restart apache2
+
+- name: PhpMyAdmin | Force handler execution right now
+  ansible.builtin.meta: flush_handlers

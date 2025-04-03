@@ -1,0 +1,25 @@
+---
+# tasks file for ansible-role-web-benchmark
+- name: WebBenchmark | Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: WebBenchmark | Install packages
+  ansible.builtin.apt:
+    name:
+     - nmap
+     - apache2-utils
+    state: present
+
+- name: WebBenchmark | place benchmark-test.bash
+  ansible.builtin.template:
+    src: benchmark-test.bash.j2
+    dest: "/home/sit/benchmark-test.bash"
+    mode: "0777"
+
+- name: Ensure /var/log/benchmark.log exists with 777 permissions
+  file:
+    path: "{{ benchmark_log }}"
+    state: touch
+    mode: '0777'
+

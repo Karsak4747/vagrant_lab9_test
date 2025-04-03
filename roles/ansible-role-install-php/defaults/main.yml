@@ -1,0 +1,9 @@
+---
+# defaults file for ansible-role-install-php
+php_dir: "/var/www/html"
+
+
+php_db_ip_address: 192.168.57.103
+php_db_username: infochem
+php_db_password: infochem
+php_db_name: mysql

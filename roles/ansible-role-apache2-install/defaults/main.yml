@@ -1,0 +1,9 @@
+---
+# defaults file for ansible-role-apache2-install
+apache2_available_configs:
+  - apache2-html.conf
+  - apache2-php.conf
+
+apache2_ports:
+  - 80
+  - 8080

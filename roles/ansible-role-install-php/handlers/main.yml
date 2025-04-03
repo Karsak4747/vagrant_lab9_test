@@ -1,0 +1,11 @@
+---
+# handlers file for ansible-role-install-php
+- name: restart php
+  service:
+    name: php8.3-fpm
+    state: restarted
+
+- name: restart apache2
+  service:
+    name: apache2
+    state: restarted

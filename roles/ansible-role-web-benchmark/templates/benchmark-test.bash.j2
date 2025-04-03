@@ -1,0 +1,76 @@
+#!/bin/bash
+
+URL="{{ url_for_test }}"
+LOG_FILE="{{ benchmark_log }}"
+
+# Начальные значения
+min="{{ min_parallel_requests }}"
+max="{{ max_parallel_requests }}"
+
+# Функция для выполнения Apache Benchmark
+run_ab() {
+    local concurrency=$1
+    echo "Запуск теста с $concurrency параллельными запросами..." 
+
+    ab -n 10000 -c "$concurrency" "$URL" > output.log 2>&1
+
+    # Проверяем наличие ошибки "Connection reset by peer"
+    if grep -q "apr_socket_recv: Connection reset by peer" output.log; then
+        echo "Обнаружена ошибка соединения! Ожидание 15 секунд..."
+        sleep 15
+        return 1
+    fi
+
+    # Проверяем наличие блока "Connection Times (ms)"
+    if ! grep -q "Connection Times (ms)" output.log; then
+        echo "Обнаружена ошибка (нет блока Connection Times)! Ожидание 15 секунд..."
+        sleep 15
+        return 1
+    fi
+
+    return 0  # Без ошибок
+}
+
+# Грубый поиск (пишет только информацию о запуске)
+run_ab $min
+if [ $? -ne 0 ]; then
+    echo "Ошибка на минимальном значении ($min). Прерывание."
+    exit 1
+fi
+
+run_ab $max
+if [ $? -eq 0 ]; then
+    echo "Максимальное значение $max прошло без ошибок. Прерывание."
+    exit 0
+fi
+
+# Двоичный поиск (пишет только информацию о запуске)
+while (( max - min > 10 )); do
+    mid=$(( (min + max) / 2 ))
+    run_ab $mid
+    if [ $? -eq 0 ]; then
+        min=$mid
+    else
+        max=$mid
+    fi
+done
+
+# Логирование результатов точного поиска
+echo "=== Начало точного поиска (от $max к $min) ===" | tee -a "$LOG_FILE"
+
+# Точный поиск от max к min до первой удачной команды
+for (( i=max; i>=min; i-- )); do
+    echo "Тест с $i запросами:" | tee -a "$LOG_FILE"
+    ab -n 10000 -c "$i" "$URL" 2>&1 | tee output.log | tee -a "$LOG_FILE"
+
+    # Проверяем ошибки
+    if grep -q "apr_socket_recv: Connection reset by peer" output.log || ! grep -q "Connection Times (ms)" output.log; then
+        echo "Обнаружена ошибка! Ожидание 15 секунд..." | tee -a "$LOG_FILE"
+        sleep 15
+        continue
+    fi
+
+    # Найден первый успешный тест
+    echo "Найден предел: $i" | tee -a "$LOG_FILE"
+    exit 0
+done

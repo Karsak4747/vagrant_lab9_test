@@ -1,0 +1,7 @@
+---
+# defaults file for ansible-role-create-mysql-user
+mysql_root_user: root
+mysql_root_password: infochem
+mysql_user: infochem
+mysql_password: infochem
+mysql_user_host: '%'

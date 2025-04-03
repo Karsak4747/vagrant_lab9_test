@@ -1,0 +1,99 @@
+---
+# tasks file for ansible-role-wordpress
+- name: WordPress | Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: WordPress | Install packages
+  ansible.builtin.apt:
+    name:
+     - python3-pip
+    state: present
+
+- name: WordPress | Install MySQL Python library
+  pip:
+    name:
+      - PyMySQL
+
+#=============================Stop process occupated port 80========================================================
+
+- name: WordPress | Find PID of process, occupated port 80
+  shell: "lsof -i :80 -t | head -n 1"
+  register: process_pid
+  changed_when: process_pid.stdout != ""
+
+- name: WordPress | Find name of process
+  shell: "ps -o comm= -p {{ process_pid.stdout }}"
+  register: process_name
+  when: process_pid.stdout != ""
+  changed_when: false
+
+- name: WordPress | Find systemd-service, appropriate to the process
+  shell: "systemctl list-units --type=service --all | grep {{ process_name.stdout }} | awk '{print $1}' | head -n 1"
+  register: service_name
+  when: process_name.stdout != ""
+  changed_when: false
+
+- name: WordPress | Update systemd-service
+  systemd:
+    name: "{{ service_name.stdout }}"
+    state: stopped
+  when: service_name.stdout != ""
+
+#=======================================================================================================================
+
+- name: Set permanent file descriptor limit
+  ansible.builtin.lineinfile:
+    path: /etc/security/limits.conf
+    line: "* soft nofile 65536\n* hard nofile 65536"
+    regexp: "^\\* (soft|hard) nofile"
+    state: present
+  become: yes
+
+- include_tasks: phpmyadmin.yml
+
+- name: WordPress | Create a new database with name for wordpress
+  community.mysql.mysql_db:
+    name: "{{ wordpress_db_name }}"
+    login_user: "{{ mysql_user }}"
+    login_password: "{{ mysql_user_password }}"
+    login_host: "{{ wordpress_db_host }}"
+    state: present
+
+- name: WordPress | download wordpress archive
+  get_url: 
+    url: "{{ wordpress_url }}" 
+    dest: /tmp/wordpress.tar.gz
+    mode: '6440'
+
+- name: WordPress | Extract wordpress.tar.gz into /tmp
+  ansible.builtin.unarchive:
+    src: /tmp/wordpress.tar.gz
+    dest: /var/www/html/
+    remote_src: true
+
+
+- name: WordPress | place wp-config-sample.php
+  ansible.builtin.template:
+    src: wp-config.php.j2
+    dest: "/var/www/html/wordpress/wp-config.php"
+    owner: root
+    group: root
+    mode: "0644"
+
+
+
+
+#============================Удалить нахер после выполнения лабы==============================================================
+- name: Clone repository from GitHub
+  git:
+    repo: "https://github.com/sanchitpasricha/bigBasket_clone_project.git"
+    dest: "/var/www/html/BigBasket"
+    version: main
+    force: yes
+- name: Set permissions to 777 recursively
+  file:
+    path: "/var/www/html/BigBasket"
+    state: directory
+    mode: '0777'
+    recurse: yes

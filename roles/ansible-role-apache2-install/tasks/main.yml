@@ -1,0 +1,90 @@
+---
+# tasks file for ansible-role-apache2-install
+- name: Apache2| Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+#=============================Stop process occupated port 80========================================================
+
+- name: Apache2| Find PID of process, occupated port 80
+  shell: "lsof -i :80 -t | head -n 1"
+  register: process_pid
+  changed_when: process_pid.stdout != ""
+
+- name: Apache2| Find name of process
+  shell: "ps -o comm= -p {{ process_pid.stdout }}"
+  register: process_name
+  when: process_pid.stdout != ""
+  changed_when: false
+
+- name: Apache2| Find systemd-service, appropriate to the process
+  shell: "systemctl list-units --type=service --all | grep {{ process_name.stdout }} | awk '{print $1}' | head -n 1"
+  register: service_name
+  when: process_name.stdout != ""
+  changed_when: false
+
+- name: Apache2| Update systemd-service
+  systemd:
+    name: "{{ service_name.stdout }}"
+    state: stopped
+  when: service_name.stdout != ""
+
+#=======================================================================================================================
+
+- name: Apache2 | Package Install
+  apt: 
+    name: 
+      - apache2
+    state: present
+  notify: "Start Apache2"
+
+- name: Apache2 | Ensure Apache2 sites-available and sites-enabled directory exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/apache2/sites-available
+    - /etc/apache2/sites-enabled
+
+- name: Ensure Apache listens on port "{{ item }}"
+  ansible.builtin.lineinfile:
+    path: /etc/apache2/ports.conf
+    line: "Listen {{ item }}"
+    state: present
+  notify: Restart Apache
+  loop: "{{ apache2_ports }}"
+
+- name: Copy and render Apache2 templates from predefined list
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/apache2/sites-available/{{ item }}"
+  loop: "{{ apache2_available_configs }}"
+
+- name: Apache2 | Remove default symlink from sites-enabled
+  ansible.builtin.file:
+    path: "/etc/apache2/sites-enabled/000-default.conf"
+    state: absent
+
+- name: Apache2 | Remove all symlinks from sites-enabled
+  ansible.builtin.file:
+    path: "/etc/apache2/sites-enabled/{{ item }}"
+    state: absent
+  loop: "{{ apache2_available_configs }}"
+  notify: "Restart Apache2"
+
+- name: Apache2 | Enable all sites 
+  ansible.builtin.file:
+    src: "/etc/apache2/sites-available/{{ item }}"
+    dest: "/etc/apache2/sites-enabled/{{ item }}"
+    state: link
+  loop: "{{ apache2_available_configs }}"
+  notify: "Restart Apache2"
+
+- name: Set permanent file descriptor limit
+  ansible.builtin.lineinfile:
+    path: /etc/security/limits.conf
+    line: "* soft nofile 65536\n* hard nofile 65536"
+    regexp: "^\\* (soft|hard) nofile"
+    state: present
+  become: yes

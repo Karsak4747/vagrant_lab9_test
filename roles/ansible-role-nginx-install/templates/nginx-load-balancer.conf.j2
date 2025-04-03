@@ -1,0 +1,34 @@
+upstream web_backend {
+{% for server in balanced_servers %}
+    {{ server }}
+{% endfor %}
+}
+
+
+
+
+server {
+    listen 80;
+
+
+
+    # Основная конфигурация для проксирования
+    location / {
+        proxy_pass http://web_backend;  # Передаем запросы на upstream
+        proxy_set_header Host $host;
+        {# proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_redirect off; #}
+    }
+
+    {# # Если используете SSL, настройте редирект с HTTP на HTTPS
+    # location / {
+    #     return 301 https://$host$request_uri;
+    # }
+
+    # Логи для отладки
+    access_log /var/log/nginx/wordpress_access.log;
+    error_log /var/log/nginx/wordpress_error.log; #}
+}

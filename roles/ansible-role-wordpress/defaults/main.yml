@@ -1,0 +1,8 @@
+---
+# defaults file for ansible-role-wordpress
+wordpress_db_name: wordpressdb01
+mysql_root_password: infochem
+mysql_user: infochem
+mysql_user_password: infochem
+wordpress_db_host: 192.168.56.101
+wordpress_url: http://wordpress.org/latest.tar.gz
